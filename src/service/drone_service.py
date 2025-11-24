@@ -58,7 +58,7 @@ class DroneService:
                         "kind": "segment",
                         "segmentIndex": idx,
                         "from": servicePoint.name if idx == 0 else requests[idx - 1].id,
-                        "to": req.id,
+                        "to": servicePoint.name if idx == len(requests)-1 else req.id,
                         "moves": segment.moves,
                         "droneId": drone.id,
                     },
@@ -69,26 +69,7 @@ class DroneService:
                 }
             )
 
-        features.append(
-            {
-                "type": "Feature",
-                "properties": {
-                    "kind": "stop",
-                    "stopType": "servicePoint",
-                    "id": servicePoint.name,
-                    "index": 0,
-                },
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [
-                        servicePoint.location.lng,
-                        servicePoint.location.lat,
-                    ],
-                },
-            }
-        )
-
-        for i, req in enumerate(requests, start=1):
+        for i, req in enumerate(requests[:-2]):
             features.append(
                 {
                     "type": "Feature",
@@ -114,11 +95,37 @@ class DroneService:
         }
 
     @staticmethod
-    def write_multi_requests_geojson_to_file(drone: Drone, service_point: ServicePoint, requests: list[Request],
+    def write_multi_requests_geojson_to_file(drone: Drone, servicePoint: ServicePoint, requests: list[Request],
                                              paths: list[PathResult], output_file: str = "static/path.geojson") -> None:
-        geojson = DroneService.multiRequestsAsGeoJson(drone=drone, servicePoint=service_point, requests=requests, paths=paths)
+        geojson = DroneService.multiRequestsAsGeoJson(drone=drone, servicePoint=servicePoint, requests=requests, paths=paths)
 
         output_path = Path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with output_path.open("w", encoding="utf-8") as f:
+            json.dump(geojson, f)
+
+    @staticmethod
+    def draw_service_point_on_map(servicePoints: List[ServicePoint]) -> None:
+        geojson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [sp.location.lng, sp.location.lat],
+                    },
+                    "properties": {
+                        "id": sp.id,
+                        "name": sp.name,
+                    },
+                }
+                for sp in servicePoints
+            ],
+        }
+
+        output_path = Path("static/service_points.geojson")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with output_path.open("w", encoding="utf-8") as f:

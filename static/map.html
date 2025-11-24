@@ -25,7 +25,7 @@
 
     .glow-blue-path {
       stroke: #00bfff;
-      stroke-width: 4;
+      stroke-width: 2;
       stroke-linejoin: round;
       stroke-linecap: round;
       filter: drop-shadow(0 0 4px #00bfff)
@@ -50,7 +50,8 @@
     attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
   }).addTo(map);
 
-  let geojsonLayer = null;
+  let geojsonLayer = null;           // path layer
+  let servicePointsLayer = null;     // new: service points layer
 
   async function loadPath() {
     try {
@@ -88,31 +89,15 @@
           const props = feature.properties || {};
           if (props.kind === "stop") {
             const idx = props.index ?? 0;
-            let color = "#cccccc";
-            if (idx === 0) {
-              color = "#00bfff";
-            } else if (props.isLast === true) {
-              color = "#ff3333";
-            }
+            let color = "#ff0000";
 
             return L.circleMarker(latlng, {
               radius: 5,
               color: color,
               fillColor: color,
               fillOpacity: 1.0,
-            }).bindPopup(
-              (props.stopType === "servicePoint" ? "Service point" : "Request") +
-              (props.id ? `: ${props.id}` : "")
-            );
+            });
           }
-
-          // fallback: plain small grey dot
-          return L.circleMarker(latlng, {
-            radius: 4,
-            color: "#cccccc",
-            fillColor: "#cccccc",
-            fillOpacity: 1.0,
-          });
         },
       }).addTo(map);
 
@@ -126,11 +111,49 @@
     }
   }
 
-  // initial load
-  loadPath();
+  async function loadServicePoints() {
+    try {
+      const response = await fetch(`/static/service_points.geojson?ts=${Date.now()}`, {
+        cache: "no-store",
+      });
+      console.log("Fetch /static/service_points.geojson status:", response.status);
 
-  // auto refresh every 3 seconds
-  setInterval(loadPath, 3000);
+      if (!response.ok) {
+        console.warn("No service_points.geojson yet or failed to fetch:", response.status);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Service points GeoJSON:", data);
+
+      if (servicePointsLayer) {
+        map.removeLayer(servicePointsLayer);
+      }
+
+      servicePointsLayer = L.geoJSON(data, {
+        pointToLayer: function (feature, latlng) {
+          const props = feature.properties || {};
+          const name = props.name || `Service Point ${props.id ?? ""}`;
+
+          return L.circleMarker(latlng, {
+            radius: 10,
+            color: "#cccccc",
+            fillColor: "#cccccc",
+            fillOpacity: 1.0,
+          }).bindPopup(name);
+        },
+      }).addTo(map);
+    } catch (err) {
+      console.error("Error loading service_points.geojson:", err);
+    }
+  }
+
+  loadPath();
+  loadServicePoints();
+
+  setInterval(loadPath, 5000);
+  setInterval(loadServicePoints, 5000)
 </script>
+
 </body>
 </html>

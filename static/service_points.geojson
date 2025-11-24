@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-3.1863580788986368, 55.94468066708487]}, "properties": {"id": 1, "name": "Appleton Tower"}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-3.17732611501824, 55.981186279333656]}, "properties": {"id": 2, "name": "Ocean Terminal"}}]}

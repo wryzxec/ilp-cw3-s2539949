@@ -48,4 +48,5 @@ def calcDeliveryPathAsGeoJson(requests: List[Request]):
     paths = DroneService.multiRequestPath(servicePoint, requests)
     geojson = DroneService.multiRequestsAsGeoJson(drone, servicePoint, requests, paths)
     DroneService.write_multi_requests_geojson_to_file(drone, servicePoint, requests, paths)
+    DroneService.draw_service_point_on_map(servicePoints)
     return geojson
