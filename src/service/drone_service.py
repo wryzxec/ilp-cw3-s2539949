@@ -18,7 +18,7 @@ class DroneService:
     @staticmethod
     def multiRequestPath(servicePoint: ServicePoint, requests: List[Request]) -> List[PathResult]:
         paths: List[PathResult] = []
-        currPos: LngLat = servicePoint.position
+        currPos: LngLat = servicePoint.location
         remaining: List[Request] = list(requests)
 
         while remaining:
@@ -36,7 +36,7 @@ class DroneService:
             currPos = closest_req.position
             remaining.remove(closest_req)
 
-        returnPath = DroneService.dronePath(currPos, servicePoint.position)
+        returnPath = DroneService.dronePath(currPos, servicePoint.location)
         paths.append(returnPath)
 
         return paths
@@ -46,7 +46,7 @@ class DroneService:
                                paths: List[PathResult]) -> dict:
         features: List[dict] = []
 
-        requests.append(Request(id="0", position=servicePoint.position, content=""))
+        requests.append(Request(id="0", position=servicePoint.location, content=""))
 
         for idx, (req, segment) in enumerate(zip(requests, paths)):
             coords = [[p.lng, p.lat] for p in segment.path]
@@ -81,8 +81,8 @@ class DroneService:
                 "geometry": {
                     "type": "Point",
                     "coordinates": [
-                        servicePoint.position.lng,
-                        servicePoint.position.lat,
+                        servicePoint.location.lng,
+                        servicePoint.location.lat,
                     ],
                 },
             }

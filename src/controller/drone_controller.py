@@ -8,6 +8,7 @@ from src.dto.geo.lnglat import LngLat
 
 from src.service.nav_service import NavService
 from src.service.drone_service import DroneService
+from src.service.endpoint_service import EndpointService
 
 router = APIRouter(
     prefix="/api/drones",
@@ -38,11 +39,13 @@ def calcDeliveryPath(requests: List[Request]):
 
 @router.post("/calcDeliveryPathAsGeoJson")
 def calcDeliveryPathAsGeoJson(requests: List[Request]):
-    drone = Drone(id="1", name="Alpha")
-    servicePoint = ServicePoint(id="1",name="Appleton Tower",position=LngLat(lng=-3.186, lat=55.944))
+    drones = EndpointService.fetchDrones()
+    servicePoints = EndpointService.fetchServicePoints()
+
+    drone = drones[0]
+    servicePoint = servicePoints[0]
 
     paths = DroneService.multiRequestPath(servicePoint, requests)
     geojson = DroneService.multiRequestsAsGeoJson(drone, servicePoint, requests, paths)
     DroneService.write_multi_requests_geojson_to_file(drone, servicePoint, requests, paths)
     return geojson
-

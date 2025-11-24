@@ -1,9 +1,10 @@
+from pydantic import BaseModel
 from dataclasses import dataclass
 
 from src.dto.geo.lnglat import LngLat
 
 @dataclass
-class ServicePoint:
-    id: str
+class ServicePoint(BaseModel):
+    id: int
     name: str
-    position: LngLat
+    location: LngLat
