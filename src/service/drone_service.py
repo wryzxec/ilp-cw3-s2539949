@@ -7,34 +7,56 @@ from src.dto.drone.request import Request
 from src.dto.drone.service_point import ServicePoint
 from src.dto.pathfinding.path_result import PathResult
 from src.service.nav_service import NavService
+from src.service.llm_service import LLMService, LLMDecision
 from src.dto.geo.lnglat import LngLat
 
 class DroneService:
-
     @staticmethod
     def dronePath(start: LngLat, target: LngLat) -> PathResult:
         return NavService.shortestPath(start, target)
 
     @staticmethod
     def multiRequestPath(servicePoint: ServicePoint, requests: List[Request]) -> List[PathResult]:
+        # let llm assign priority and medical items for each request
+        # order requests by priority
+
+        # hard code item storage for now
+        itemStorage = ["epipen", "bandage", "insulin"]
+
+        decisions: dict[str, LLMDecision] = {}
+
+        for req in requests:
+            llmDecision =  LLMService.parseEmergencyMessage(req, itemStorage)
+            decisions[req.id] = llmDecision
+
+            # debug
+            priority = llmDecision.priority
+            packageContents = llmDecision.items
+            print(f"Request: {req.id}")
+            print(f"priority: {priority}, packageContents: {packageContents}\n")
+
+        # for now just choose the first service point
         paths: List[PathResult] = []
         currPos: LngLat = servicePoint.location
         remaining: List[Request] = list(requests)
-
         while remaining:
-            closest_req, _ = min(
+            maxPriority = max(decisions[req.id].priority for req in remaining)
+            candidates = [req for req in remaining if decisions[req.id].priority == maxPriority]
+
+            # if multiple requests have same priority, filter by distance
+            closestReq, _ = min(
                 (
                     (req, NavService.distance(currPos, req.position))
-                    for req in remaining
+                    for req in candidates
                 ),
                 key=lambda t: t[1],
             )
-
-            path = DroneService.dronePath(currPos, closest_req.position)
+            path = DroneService.dronePath(currPos, closestReq.position)
             paths.append(path)
 
-            currPos = closest_req.position
-            remaining.remove(closest_req)
+            # move the drone there, remove the request from remaining
+            currPos = closestReq.position
+            remaining.remove(closestReq)
 
         returnPath = DroneService.dronePath(currPos, servicePoint.location)
         paths.append(returnPath)

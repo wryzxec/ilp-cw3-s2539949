@@ -32,7 +32,6 @@ def get_drone(drone_id: str):
 
 @router.post("/calcDeliveryPath")
 def calcDeliveryPath(requests: List[Request]):
-    print("Hello World!")
     startPos = LngLat(lng=-3.189, lat=55.941)
     targetPos = requests[0].position
     return NavService.shortestPath(startPos, targetPos)
